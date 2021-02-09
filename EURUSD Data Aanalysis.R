@@ -1,0 +1,37 @@
+executions = read.csv(file="EURUSD.csv")
+dim(executions)
+boxplot(executions[,2:6], main="EURUSD raw data distribution")
+colors()
+boxplot(executions[,2:6], main="EURUSD raw data distribution", col=c("aliceblue", "wheat","salmon","steelblue","tomato",))
+
+plot(executions)
+data = executions[,2:6]
+data = executions[,2:6]
+rownames(data) = executions[,1]
+dim(data)
+boxplot(t(data))
+boxplot(t(data), las = 2, main="EURUSD")
+par(mar=c(10,4,4,2)+ 0.1)
+boxplot(t(data), las = 2, main="EURUSD", cex.axis = .8, col= gray(.8))
+barplot(t(data), las = 2, main="EURUSD", cex.axis = .8)
+library(affy)
+par(mfrow = c(1,2))
+plotDensity(data, main = "EURUSD")
+plotDensity(log2(data), main = "log2-Transformed Data")
+par(mfrow = c(2,2))
+plotDensity(data, main = "Raw Data", xlab="Executions")
+legend(x=1500, y=.005, legend=c("2019","2020","2021","2022"), text.col=c(1,2,3,4))
+plotDensity(data.norm, main = "Normalized Data based on percentages %", xlab="Proportion of Executions")
+plotDensity(log2(data), main = "log2-Transformed Data", xlab="Executions in log2")
+plotDensity(log2(data.norm), main = "log2-Transformed Normalized Data", xlab = "% of executions in log2")
+
+c <- cor(t(data), method="spearman") 
+d <- as.dist(1-c)
+c = cor(t(data), method="spearman") 
+d = as.dist(1-c) 
+hr = hclust(d, method = "complete", members=NULL) 
+par(mfrow = c(2, 1)) 
+par(mar= c(8, 4, 4, 4) + 0.1) 
+plot(hr, hang = 0.1)
+plot(hr, hang = -1)
+
