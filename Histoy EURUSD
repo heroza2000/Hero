@@ -1,0 +1,512 @@
+boxplot(executions[,2:6], main="EURUSD raw data distribution", col=c("aliceblue", "wheat","salmon","steelblue","tomato"))
+boxplot(executions[,2:7], main="EURUSD raw data distribution")
+color()
+colors()
+boxplot(executions[,2:7], main="EURUSD raw data distribution", col=c("aliceblue", "wheat","salmon","steelblue","tomato","tan1"))
+data = executions[,2:7]
+rownames(data) = executions[,1]
+dim(data)
+boxplot(t(data))
+boxplot(t(data), las = 2, main="EURUSD")
+par(mar=c(10,4,4,2)+ 0.1)
+boxplot(t(data), las = 2, main="EURUSD", cex.axis = .8, col= gray(.8))
+barplot(t(data), las = 2, main="EURUSD", cex.axis = .8)
+library(affy)
+par(mfrow = c(1,2))
+plotDensity(data, main = "Raw Data")
+plotDensity(log2(data), main = "EURUSD")
+plotDensity(log2(data))
+plotDensity(log2(data), main = "log2-Transformed Data")
+m = apply(data,2,sum)
+data.norm = c()
+for ( i in 1:4)
+{
+data.norm = cbind(data.norm, data[,i]/m[i])
+}
+rownames(data.norm) = rownames(data)
+colnames(data.norm) = colnames(data)
+nearconvex_fit <- function(y, lambda) {
+    m <- length(y)
+    beta <- Variable(m)
+    obj <- 0.5 * sum((y - beta)^2) + lambda * sum(pos(diff(beta, differences = 2)))
+    prob <- Problem(Minimize(obj))
+    prob_data <- get_problem_data(prob, solver = "ECOS")
+    solve(prob)$getValue(beta)
+   ## solver_output <- ECOSolveR::ECOS_csolve(c = prob_data[["c"]],
+    ##                                         G = prob_data[["G"]],
+    ##                                         h = prob_data[["h"]],
+    ##                                         dims = prob_data[["dims"]],
+    ##                                         A = prob_data[["A"]],
+    ##                                         b = prob_data[["b"]])
+    ## unpack_results(prob, "ECOS", solver_output)$getValue(beta)
+}
+nearconvex_fit_stat <- function(data, index, lambda) {
+    sample <- data[index,]                  # Bootstrap sample of rows
+    sample <- sample[order(sample$year),]   # Order ascending by year
+    nearconvex_fit(sample$annual, lambda)
+}
+set.seed(987)
+boot.nearconvex <- boot(data = cdiac, statistic = nearconvex_fit_stat, R = 5, lambda = 0.44)
+ci.nearconvex <- t(sapply(seq_len(nrow(cdiac)),
+                          function(i) boot.ci(boot.out = boot.nearconvex, conf = 0.95,
+                                              type = "norm", index = i)$normal[-1]))
+data.nearconvex <- data.frame(year = cdiac$year, annual = cdiac$annual, est = boot.nearconvex$t0,
+                              lower = ci.nearconvex[, 1], upper = ci.nearconvex[, 2])
+data(EURUSD)
+data
+str(data)
+neariso_fit <- function(y, lambda) {
+    m <- length(y)
+    beta <- Variable(m)
+    obj <- 0.5 * sum((y - beta)^2) + lambda * sum(pos(diff(beta)))
+    prob <- Problem(Minimize(obj))
+    solve(prob)$getValue(beta)
+    ## prob_data <- get_problem_data(prob, solver = "ECOS")
+    ## solver_output <- ECOSolveR::ECOS_csolve(c = prob_data[["c"]],
+    ##                                         G = prob_data[["G"]],
+    ##                                         h = prob_data[["h"]],
+    ##                                         dims = prob_data[["dims"]],
+    ##                                         A = prob_data[["A"]],
+    ##                                         b = prob_data[["b"]])
+    ## unpack_results(prob, "ECOS", solver_output)$getValue(beta)
+}
+neariso_fit_stat <- function(data, index, lambda) {
+    sample <- data[index,]                  # Bootstrap sample of rows
+    sample <- sample[order(sample$year),]   # Order ascending by year
+    neariso_fit(sample$annual, lambda)
+}
+set.seed(123)
+boot.neariso <- boot(data = data, statistic = neariso_fit_stat, R = 10, lambda = 0.44)
+ci.neariso <- t(sapply(seq_len(nrow(data)),
+                            function(i) boot.ci(boot.out = boot.neariso, conf = 0.95,
+                                                type = "norm", index = i)$normal[-1]))
+data.neariso <- data.frame(year = data$year, annual = cdiac$annual, est = boot.neariso$t0,
+                              lower = ci.neariso[, 1], upper = ci.neariso[, 2])
+set.seed(123)
+ boot.neariso <- boot(data = data, statistic = neariso_fit_stat, R = 10, lambda = 0.44)
+(plot.neariso <- ggplot(data = data.neariso) +
+     geom_point(mapping = aes(year, annual), color = "red") +
+     geom_line(mapping = aes(year, est), color = "blue") +
+     geom_ribbon(mapping = aes(x = year, ymin = lower,ymax = upper),alpha=0.3) +
+     labs(x = "Year", y = "Temperature Anomalies")
+)
+library(gplots)
+library(gtools)
+utils:::menuInstallPkgs()
+(plot.nearconvex <- ggplot(data = data.nearconvex) +
+     geom_point(mapping = aes(year, annual), color = "red") +
+     geom_line(mapping = aes(year, est), color = "blue") +
+     geom_ribbon(mapping = aes(x = year, ymin = lower,ymax = upper),alpha=0.3) +
+     labs(x = "Year", y = "Temperature Anomalies")
+)
+utils:::menuInstallPkgs()
+> (plot.nearconvex <- ggplot(data = data.nearconvex) +
++      geom_point(mapping = aes(year, annual), color = "red") +
++      geom_line(mapping = aes(year, est), color = "blue") +
++      geom_ribbon(mapping = aes(x = year, ymin = lower,ymax = upper),alpha=0.3) +
++      labs(x = "Year", y = "Temperature Anomalies")
++ )
+library(limma)
+ggplot(data)
+library("ggplot2")
+ggplot(data)
+(plot.nearconvex <- ggplot(data = data.nearconvex) +
+     geom_point(mapping = aes(year, annual), color = "red") +
+     geom_line(mapping = aes(year, est), color = "blue") +
+     geom_ribbon(mapping = aes(x = year, ymin = lower,ymax = upper),alpha=0.3) +
+     labs(x = "Year", y = "Temperature Anomalies")
+)
+neariso_fit <- function(y, lambda) {
+    m <- length(y)
+    beta <- Variable(m)
+    obj <- 0.5 * sum((y - beta)^2) + lambda * sum(pos(diff(beta)))
+    prob <- Problem(Minimize(obj))
+    solve(prob)$getValue(beta)
+    ## prob_data <- get_problem_data(prob, solver = "ECOS")
+    ## solver_output <- ECOSolveR::ECOS_csolve(c = prob_data[["c"]],
+    ##                                         G = prob_data[["G"]],
+    ##                                         h = prob_data[["h"]],
+    ##                                         dims = prob_data[["dims"]],
+    ##                                         A = prob_data[["A"]],
+    ##                                         b = prob_data[["b"]])
+    ## unpack_results(prob, "ECOS", solver_output)$getValue(beta)
+)
+neariso_fit <- function(y, lambda) {
+    m <- length(y)
+    beta <- Variable(m)
+    obj <- 0.5 * sum((y - beta)^2) + lambda * sum(pos(diff(beta)))
+    prob <- Problem(Minimize(obj))
+    solve(prob)$getValue(beta)
+    ## prob_data <- get_problem_data(prob, solver = "ECOS")
+    ## solver_output <- ECOSolveR::ECOS_csolve(c = prob_data[["c"]],
+    ##                                         G = prob_data[["G"]],
+    ##                                         h = prob_data[["h"]],
+    ##                                         dims = prob_data[["dims"]],
+    ##                                         A = prob_data[["A"]],
+    ##                                         b = prob_data[["b"]])
+    ## unpack_results(prob, "ECOS", solver_output)$getValue(beta)
+}
+neariso_fit_stat <- function(data, index, lambda) {
+    sample <- data[index,]                  # Bootstrap sample of rows
+    sample <- sample[order(sample$year),]   # Order ascending by year
+    neariso_fit(sample$annual, lambda)
+}
+set.seed(123)
+boot.neariso <- boot(data =data, statistic = neariso_fit_stat, R = 10, lambda = 0.44)
+ci.neariso <- t(sapply(seq_len(nrow(data)),
+                            function(i) boot.ci(boot.out = boot.neariso, conf = 0.95,
+                                                type = "norm", index = i)$normal[-1]))
+data.neariso <- data.frame(year = data$year, annual = data$annual, est = boot.neariso$t0,
+                              lower = ci.neariso[, 1], upper = ci.neariso[, 2])
+sapply(data, class)
+head(data)
+summary(data)
+data$Class
+H2 = hclust(dist(data,method="maximum"))
+cl2 = cutree(H2,k=3)
+table(cl2, rows)
+table(cl2, species)
+table(cl2)
+ D = (1-cor(t(data)))/2
+D = as.dist(D)
+H3 = hclust(D)
+cl3 = cutree(H3,k=3)
+table(cl3)
+qplot(data)
+qplot(data.frame)
+boot.ci(lmCoef.booted,index=1)
+coef(lm(data))
+summary(lm(data))
+ boot.ci(lmCoef.booted,index=1)
+cl = kmeans(data,centers=3, nstart=10)$cluster
+ plot(PC$x[,1],PC$x[,2],col = cl,pch=point)
+log.transform <- log(data[, 1:6])
+transform <- data[, 7]
+transform.class <- data[, 7]
+ggplot(circle,aes(x,y)) + geom_path()
+ggplot(data,axes(x,y)) + geom_path()
+ggplot(data) + geom_path()
+save.image("C:\\Users\\Hero Ozagho\\Desktop\\Hero work.R")
++
+ggplot(circle,aes(x,y)) + geom_path()
+data(EURUSD)
+data(EURUSD.csv)
+data
+data.frame
+library(tidyverse) 
+library(caret) 
+theme_set(theme_classic()) 
+set.seed(123) 
+training.samples <- data$medv
+createDataPartition(p = 0.8, list = FALSE) 
+train.data  <- Boston[training.samples, ] 
+test.data <- Boston[-training.samples, ] createDataPartition(p = 0.8, list = FALSE) 
+train.data 
+train.data<-data[training.samples,]
+test.data <-data[-training.samples, ] 
+model <- lm(medv ~ poly(lstat, 5, raw = TRUE), data = train.data) 
+model <- lm(medv ~ poly(lstat, 5, raw = TRUE)) 
+model <- lm(medv ~ poly(lstat, 5, raw = TRUE), data) 
+dist(data, method = "euclidean")
+c <- cor(t(data), method="spearman") 
+d <- as.dist(1-c)
+c = cor(t(data), method="spearman") 
+d = as.dist(1-c) 
+hr = hclust(d, method = "complete", members=NULL) 
+par(mfrow = c(2, 1)) 
+par(mar= c(8, 4, 4, 4) + 0.1) 
+plot(hr, hang = 0.1)
+plot(hr, hang = -1) 
+y <- matrix(rnorm(500), 50, 10, dimnames=list(paste("g", 1:50, sep=""), paste("t", 1:10, sep=""))) 
+pv <- pvclust(scale(t(y)), method.dist="correlation", method.hclust="complete", nboot=10) 
+pv <- pvclust(scale(data(y)), method.dist="correlation", method.hclust="complete", nboot=10) 
+z1 <- rnorm(10000, mean=1, sd=1); 
+z2 <- rnorm(10000, mean=3, sd=3); 
+z3 <- rnorm(10000, mean=5, sd=5); 
+z4 <- rnorm(10000, mean=7, sd=7); 
+z5 <- rnorm(10000, mean=9, sd=9); 
+mydata <- matrix(c(z1, z2, z3, z4, z5), 2500, 20, byrow=T, dimnames=list(paste("R", 1:2500, sep=""), paste("C", 1:20, sep="")))
+pca <- prcomp(data, scale=T)
+mydata <- matrix(c(z1, z2, z3, z4, z5), 2500, 20, byrow=T, dimnames=list(paste("R", 1:2500, sep=""), paste("C", 1:20, sep="")))
+data <- matrix(c(z1, z2, z3, z4, z5), 2500, 20, byrow=T, dimnames=list(paste("R", 1:2500, sep=""), paste("C", 1:20, sep="")))
+pca <- prcomp(mydata, scale=T)
+summary(pca)
+pca <- prcomp(data, scale=T)
+summary(pca)
+attributes(data)
+fit(data)
+attribute(execution)
+attribute(executions)
+executions = read.csv(file="EURUSD.csv")
+dim(executions)
+boxplot(executions[,2:6]
+}
+boxplot(executions[,2:6], main="Raw Data")
+colors()
+plot(ned[,"GSM277408.CEL.gz"], ned[,"GSM277414.CEL.gz"], pch=".",
+    xlab="GSM277408", ylab="GSM277414",
+    main="Logjam mutant vs Control (Abdomen)")
+plot(ned[,"executions"], pch=".", + xlab="executions", ylab="Date")
+plot(executions)
+polyfit(executions)
+abline(fit)
+abline(executions)
+R2<-summary(executions)$r.squared
+executions<-lm(Open)
+executions<-lm[,2:6]
+fit(executions[,2:6], main="raw data distribution")
+plot(executions[,2:6], main="raw data distribution")
+(executions[,2:6], main="raw data distribution")
+plot(EURUSD.csv$Open, EURUSD.csv$High, EURUSD.csv$Low,EURUSD.csv$Close,EURUSD.csv$Adj. Close)
+Plot(EURUSD.csv$Open)
+plot(EURUSD.csv$Open) 
+plot(EURUSD$Open, EURUSD$High, EURUSD$Low,EURUSD$Close,EURUSD$Adj. Close)
+library(ggplot2)
+ggplot(aes(x = disp, y = mpg)) +
+ggplot(aes(x = disp, y = mpg)) 
+ggplot(executions)
+ggplot(aes(data))
+dnorm(executions)
+data = executions[,2:6]
+rownames(data) = executions[,1]
+dim(data)
+rownames(data) = executions[,2]
+m <- data.frame(CVXR.soln = result$getValue(betaHat))
+rownames(m) <- paste0("$\\beta_{", 1:p, "}$")
+knitr::kable(m)
+m <- data.frame(CVXR.soln = result$getValue(betaHat))
+m <- .frame(CVXR.soln = result$getValue(betaHat))
+n <- 261
+> p <- 100
+> beta <- -4:95
+> X <- matrix(rnorm(n * p), nrow=n)
+>  colnames(X) <- paste0("beta_", beta)
+> Y <- X %*% beta + rnorm(n)
+> ls.model <- lm(Y ~ 0 + X)
+> m <- data.frame(ls.est = coef(ls.model))
+> rownames(m) <- paste0("$\\beta_{", 1:p, "}$")
+> knitr::kable(m)
+executions = read.csv(file="EURUSD.csv")
+dim(executions)
+boxplot(executions[,2:6], main="EURUSD raw data distribution")
+colors()
+boxplot(executions[,2:6], main="EURUSD raw data distribution", col=c("aliceblue", "wheat","salmon","steelblue","tomato","tan",))
+boxplot(executions[,2:6], main="EURUSD raw data distribution", col=c("aliceblue", "wheat","salmon","steelblue","tomato","tan",))
+boxplot(executions[,2:6], main="EURUSD raw data distribution", col=c("aliceblue", "wheat","salmon","steelblue","tomato",))
+plot(executions)
+data = executions[,2:6]
+rownames(data) = executions[,1]
+dim(data)
+boxplot(t(data))
+boxplot(t(data), las = 2, main="EURUSD")
+par(mar=c(10,4,4,2)+ 0.1)
+boxplot(t(data), las = 2, main="EURUSD", cex.axis = .8, col= gray(.8))
+barplot(t(data), las = 2, main="EURUSD", cex.axis = .8)
+library(affy)
+par(mfrow = c(1,2))
+plotDensity(data, main = "EURUSD")
+plotDensity(log2(data), main = "log2-Transformed Data")
+m = apply(data,2,sum)
+data.norm = c()
+for ( i in 1:4)
+{
+data.norm = cbind(data.norm, data[,i]/m[i])
+}
+rownames(data.norm) = rownames(data)
+colnames(data.norm) = colnames(data)
+ m = apply(data,6,sum)
+ m = apply(data,7,sum)
+ m = apply(data,261,sum)
+ m = apply(data,5,sum)
+par(mfrow = c(2,2))
+plotDensity(data, main = "Raw Data", xlab="Executions")
+legend(x=1500, y=.005, legend=c("2019","2020","2021","2022"), text.col=c(1,2,3,4))
+plotDensity(data.norm, main = "Normalized Data based on percentages %", xlab="Proportion of Executions")
+plotDensity(log2(data), main = "log2-Transformed Data", xlab="Executions in log2")
+plotDensity(log2(data.norm), main = "log2-Transformed Normalized Data", xlab = "% of executions in log2")
+> executions = read.csv(file="EURUSD.csv")
+> dim(executions)
+[1] 261   7
+> boxplot(executions[,2:6], main="EURUSD raw data distribution")
+> colors()
+boxplot(executions[,2:6], main="EURUSD raw data distribution", col=c("aliceblue", "wheat","salmon","steelblue","tomato",))
+> plot(executions)
+> data = executions[,2:6]
+> data = executions[,2:6]
+> rownames(data) = executions[,1]
+> dim(data)
+[1] 261   5
+> boxplot(t(data))
+> boxplot(t(data), las = 2, main="EURUSD")
+> par(mar=c(10,4,4,2)+ 0.1)
+> boxplot(t(data), las = 2, main="EURUSD", cex.axis = .8, col= gray(.8))
+> barplot(t(data), las = 2, main="EURUSD", cex.axis = .8)
+> library(affy)
+> par(mfrow = c(1,2))
+> plotDensity(data, main = "EURUSD")
+> plotDensity(log2(data), main = "log2-Transformed Data")
+> par(mfrow = c(2,2))
+> plotDensity(data, main = "Raw Data", xlab="Executions")
+> legend(x=1500, y=.005, legend=c("2019","2020","2021","2022"), text.col=c(1,2,3,4))
+> plotDensity(data.norm, main = "Normalized Data based on percentages %", xlab="Proportion of Executions")
+> plotDensity(log2(data), main = "log2-Transformed Data", xlab="Executions in log2")
+> plotDensity(log2(data.norm), main = "log2-Transformed Normalized Data", xlab = "% of executions in log2")
+> c <- cor(t(data), method="spearman") 
+> d <- as.dist(1-c)
+> c = cor(t(data), method="spearman") 
+> d = as.dist(1-c) 
+> hr = hclust(d, method = "complete", members=NULL) 
+> par(mfrow = c(2, 1)) 
+> par(mar= c(8, 4, 4, 4) + 0.1) 
+> plot(hr, hang = 0.1)
+> plot(hr, hang = -1)
+executions = read.csv(file="EURUSD.csv")
+dim(executions)
+boxplot(executions[,2:6], main="EURUSD raw data distribution")
+colors()
+boxplot(executions[,2:6], main="EURUSD raw data distribution", col=c("aliceblue", "wheat","salmon","steelblue","tomato",))
+plot(executions)
+data = executions[,2:6]
+data = executions[,2:6]
+rownames(data) = executions[,1]
+dim(data)
+boxplot(t(data))
+boxplot(t(data), las = 2, main="EURUSD")
+par(mar=c(10,4,4,2)+ 0.1)
+boxplot(t(data), las = 2, main="EURUSD", cex.axis = .8, col= gray(.8))
+barplot(t(data), las = 2, main="EURUSD", cex.axis = .8)
+library(affy)
+par(mfrow = c(1,2))
+plotDensity(data, main = "EURUSD")
+plotDensity(log2(data), main = "log2-Transformed Data")
+par(mfrow = c(2,2))
+plotDensity(data, main = "Raw Data", xlab="Executions")
+legend(x=1500, y=.005, legend=c("2019","2020","2021","2022"), text.col=c(1,2,3,4))
+plotDensity(data.norm, main = "Normalized Data based on percentages %", xlab="Proportion of Executions")
+plotDensity(log2(data), main = "log2-Transformed Data", xlab="Executions in log2")
+plotDensity(log2(data.norm), main = "log2-Transformed Normalized Data", xlab = "% of executions in log2")
+c <- cor(t(data), method="spearman") 
+d <- as.dist(1-c)
+c = cor(t(data), method="spearman") 
+d = as.dist(1-c) 
+hr = hclust(d, method = "complete", members=NULL) 
+par(mfrow = c(2, 1)) 
+par(mar= c(8, 4, 4, 4) + 0.1) 
+plot(hr, hang = 0.1)
+plot(hr, hang = -1)
+n <- 261
+p <- 100
+beta <- -4:95
+X <- matrix(rnorm(n * p), nrow=n)
+colnames(X) <- paste0("beta_", beta)
+Y <- X %*% beta + rnorm(n)
+ls.model <- lm(Y ~ 0 + X)
+m <- data.frame(ls.est = coef(ls.model))
+rownames(m) <- paste0("$\\beta_{", 1:p, "}$")
+knitr::kable(m)
+suppressWarnings(library(CVXR, warn.conflicts=FALSE))
+betaHat <- Variable(p)
+objective <- Minimize(sum((Y - X %*% betaHat)^2))
+problem <- Problem(objective)
+result <- solve(problem)
+m <- cbind(coef(ls.model), result$getValue(betaHat))
+colnames(m) <- c("lm est.", "CVXR est.")
+rownames(m) <- paste0("$\\beta_{", 1:p, "}$")
+knitr::kable(m)
+problem <- Problem(objective, constraints = list(betaHat >= 0))
+problem <- Problem(objective, constraints = list(betaHat >= 0))
+result <- solve(problem)
+m <- data.frame(CVXR.est = result$getValue(betaHat))
+rownames(m) <- paste0("$\\beta_{", 1:p, "}$")
+knitr::kable(m)
+if (requireNamespace("nnls", quietly = TRUE)) {
+    nnls.fit <- nnls::nnls(X, Y)$x
+} else {
+    nnls.fit <- rep(NA, p)
+}
+m <- cbind(result$getValue(betaHat), nnls.fit)
+colnames(m) <- c("CVXR est.", "nnls est.")
+rownames(m) <- paste0("$\\beta_{", 1:p, "}$")
+knitr::kable(m)
+library(limma)
+library(gtools)
+library(gplots)
+library(GO.db)
+design = matrix(rep(0,3*17), nrow=17)
+colnames(design) = c("LungCa", "BrCa", "TNBrCa")
+design[1:5,1] = 1
+design[6:10,2] = 1
+design[11:17,3] = 1
+fit = lmFit(exp.matrix,design)
+cont.matrix = makeContrasts("LungCa - BrCa","LungCa - TNBrCa", "TNBrCa - BrCa", levels=design)
+cont.matrix = makeContrasts("LungCa - BrCa","LungCa - TNBrCa", "TNBrCa - BrCa", levels=design)
+boxplot(t(data))
+par(mar=c(10,4,4,2)+ 0.1)
+par(mfrow = c(1,2))
+executions = read.csv(file="EURUSD.csv")
+dim(executions)
+boxplot(executions[,2:6], main="EURUSD raw data distribution")
+colors()
+boxplot(executions[,2:6], main="EURUSD raw data distribution", col=c("aliceblue", "wheat","salmon","steelblue","tomato",))
+plot(executions)
+data = executions[,2:6]
+data = executions[,2:6]
+rownames(data) = executions[,1]
+dim(data)
+boxplot(t(data))
+boxplot(t(data), las = 2, main="EURUSD")
+par(mar=c(10,4,4,2)+ 0.1)
+boxplot(t(data), las = 2, main="EURUSD", cex.axis = .8, col= gray(.8))
+barplot(t(data), las = 2, main="EURUSD", cex.axis = .8)
+library(affy)
+par(mfrow = c(1,2))
+plotDensity(data, main = "EURUSD")
+plotDensity(log2(data), main = "log2-Transformed Data")
+par(mfrow = c(2,2))
+plotDensity(data, main = "Raw Data", xlab="Executions")
+legend(x=1500, y=.005, legend=c("2019","2020","2021","2022"), text.col=c(1,2,3,4))
+plotDensity(data.norm, main = "Normalized Data based on percentages %", xlab="Proportion of Executions")
+plotDensity(log2(data), main = "log2-Transformed Data", xlab="Executions in log2")
+plotDensity(log2(data.norm), main = "log2-Transformed Normalized Data", xlab = "% of executions in log2")
+c <- cor(t(data), method="spearman") 
+d <- as.dist(1-c)
+c = cor(t(data), method="spearman") 
+d = as.dist(1-c) 
+hr = hclust(d, method = "complete", members=NULL) 
+par(mfrow = c(2, 1)) 
+par(mar= c(8, 4, 4, 4) + 0.1) 
+plot(hr, hang = 0.1)
+plot(hr, hang = -1)
+n <- 261
+p <- 100
+beta <- -4:95
+X <- matrix(rnorm(n * p), nrow=n)
+colnames(X) <- paste0("beta_", beta)
+Y <- X %*% beta + rnorm(n)
+ls.model <- lm(Y ~ 0 + X)
+m <- data.frame(ls.est = coef(ls.model))
+rownames(m) <- paste0("$\\beta_{", 1:p, "}$")
+knitr::kable(m)
+suppressWarnings(library(CVXR, warn.conflicts=FALSE))
+betaHat <- Variable(p)
+objective <- Minimize(sum((Y - X %*% betaHat)^2))
+problem <- Problem(objective)
+result <- solve(problem)
+m <- cbind(coef(ls.model), result$getValue(betaHat))
+colnames(m) <- c("lm est.", "CVXR est.")
+rownames(m) <- paste0("$\\beta_{", 1:p, "}$")
+knitr::kable(m)
+problem <- Problem(objective, constraints = list(betaHat >= 0))
+problem <- Problem(objective, constraints = list(betaHat >= 0))
+result <- solve(problem)
+m <- data.frame(CVXR.est = result$getValue(betaHat))
+rownames(m) <- paste0("$\\beta_{", 1:p, "}$")
+knitr::kable(m)
+if (requireNamespace("nnls", quietly = TRUE)) {
+    nnls.fit <- nnls::nnls(X, Y)$x
+} else {
+    nnls.fit <- rep(NA, p)
+}
+m <- cbind(result$getValue(betaHat), nnls.fit)
+colnames(m) <- c("CVXR est.", "nnls est.")
+rownames(m) <- paste0("$\\beta_{", 1:p, "}$")
